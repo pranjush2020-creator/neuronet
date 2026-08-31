@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PLANT-GPT | Industrial AI Assistant</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         BACKGROUND
+    ========================== -->
+
+    <div class="industrial-bg"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+
+    <!-- =========================
+         TOP LEFT NEW CHAT
+    ========================== -->
+
+    <button class="new-chat-floating" id="newChatBtn">
+        <span class="new-chat-icon">+</span>
+        <span>New Chat</span>
+    </button>
+
+
+    <!-- =========================
+         TOP RIGHT SIDEBAR BUTTON
+    ========================== -->
+
+    <button class="sidebar-open-btn" id="sidebarToggle" aria-label="Open sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main class="main">
+
+        <!-- TOP STATUS -->
+
+        <div class="top-status">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+                PRIVATE 5G NETWORK
+            </div>
+
+            <div class="system-center">
+                <span class="pulse-ring"></span>
+                PLANT INTELLIGENCE ONLINE
+            </div>
+
+            <div class="signal">
+                <span class="signal-bars">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </span>
+                5G
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             LANDING / CHAT AREA
+        ========================== -->
+
+        <section class="chat-area" id="chatScroll">
+
+            <div class="chat-container" id="chatLog">
+
+                <!-- LANDING -->
+
+                <div class="landing" id="emptyState">
+
+                    <div class="company-name">
+                        INDUSTRIAL AI
+                    </div>
+
+                    <div class="brand-badge">
+                        <span class="brand-line"></span>
+                        <span>PRIVATE 5G · RAG INTELLIGENCE</span>
+                        <span class="brand-line"></span>
+                    </div>
+
+                    <h1>
+                        PLANT<span>-</span>GPT
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Your intelligent assistant for the industrial floor
+                    </p>
+
+                    <p class="hero-description">
+                        Ask about manuals, SOPs, maintenance procedures,
+                        equipment faults and plant operations.
+                    </p>
+
+
+                    <!-- SEARCH -->
+
+                    <form class="hero-search" id="composerForm">
+
+                        <button
+                            type="button"
+                            class="search-icon-btn"
+                            id="attachBtn"
+                            title="Attach PDF">
+
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 12.5V6a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6"/>
+                                <path d="M17 22a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/>
+                            </svg>
+
+                        </button>
+
+
+                        <textarea
+                            id="messageInput"
+                            rows="1"
+                            placeholder="Ask the plant anything..."
+                        ></textarea>
+
+
+                        <button
+                            type="button"
+                            class="mic-button"
+                            id="micBtn"
+                            title="Voice input">
+
+                            <svg viewBox="0 0 24 24">
+                                <rect x="9" y="2" width="6" height="12" rx="3"/>
+                                <path d="M5 11a7 7 0 0 0 14 0"/>
+                                <path d="M12 18v4M8 22h8"/>
+                            </svg>
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="send-button"
+                            id="sendBtn">
+
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 12h15"/>
+                                <path d="M13 6l6 6-6 6"/>
+                            </svg>
+
+                        </button>
+
+                    </form>
+
+
+                    <div class="search-hint">
+                        ENTER to send · SHIFT + ENTER for new line
+                    </div>
+
+
+                    <!-- SUGGESTIONS -->
+
+                    <div class="suggestions">
+
+                        <button
+                            class="suggestion"
+                            data-q="What is the recommended lubrication interval for the Line 4 compressor bearings?">
+
+                            <span>⚙</span>
+                            Compressor maintenance
+
+                        </button>
+
+                        <button
+                            class="suggestion"
+                            data-q="Line 4 compressor ka maintenance schedule kya hai?">
+
+                            <span>◈</span>
+                            Maintenance schedule
+
+                        </button>
+
+                        <button
+                            class="suggestion"
+                            data-q="सुरक्षा वाल्व की जांच कितनी बार करनी चाहिए?">
+
+                            <span>△</span>
+                            Safety inspection
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- CAPABILITIES -->
+
+                    <div class="capabilities">
+
+                        <div>
+                            <span>01</span>
+                            Manuals
+                        </div>
+
+                        <div>
+                            <span>02</span>
+                            SOPs
+                        </div>
+
+                        <div>
+                            <span>03</span>
+                            Maintenance
+                        </div>
+
+                        <div>
+                            <span>04</span>
+                            Fault Diagnosis
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             CHAT COMPOSER
+        ========================== -->
+
+        <div class="bottom-composer" id="bottomComposer">
+
+            <form class="composer-inner">
+
+                <button
+                    type="button"
+                    class="composer-icon"
+                    id="bottomAttachBtn">
+
+                    +
+                </button>
+
+                <textarea
+                    id="bottomMessageInput"
+                    rows="1"
+                    placeholder="Ask about manuals, SOPs or fault codes..."
+                ></textarea>
+
+                <button
+                    type="button"
+                    class="composer-mic"
+                    id="bottomMicBtn">
+
+                    🎙
+                </button>
+
+                <button
+                    type="submit"
+                    class="composer-send">
+
+                    ➜
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-header">
+
+            <div>
+                <div class="sidebar-brand">
+                    PLANT-GPT
+                </div>
+
+                <div class="sidebar-sub">
+                    PLANT INTELLIGENCE SYSTEM
+                </div>
+            </div>
+
+            <button id="sidebarClose">
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- KNOWLEDGE BASE -->
+
+        <section class="sidebar-section">
+
+            <div class="section-title">
+                KNOWLEDGE BASE
+            </div>
+
+            <label
+                class="upload-box"
+                for="fileInput"
+                id="uploadZone">
+
+                <div class="upload-symbol">
+                    ↑
+                </div>
+
+                <div>
+                    <strong>Upload PDF</strong>
+
+                    <span>
+                        Manuals · SOP · Maintenance
+                    </span>
+                </div>
+
+            </label>
+
+            <input
+                type="file"
+                id="fileInput"
+                accept="application/pdf"
+                multiple
+                hidden
+            >
+
+
+            <ul
+                class="document-list"
+                id="docList">
+            </ul>
+
+        </section>
+
+
+        <!-- SEARCH HISTORY -->
+
+        <section class="sidebar-section history-section">
+
+            <div class="section-title">
+                SEARCH HISTORY
+            </div>
+
+            <div id="historyList">
+            </div>
+
+        </section>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="sidebar-footer">
+
+            <div class="network-card">
+
+                <div class="network-top">
+
+                    <span class="network-dot"></span>
+
+                    <span>
+                        NETWORK STATUS
+                    </span>
+
+                </div>
+
+                <strong>
+                    PRIVATE 5G · CONNECTED
+                </strong>
+
+                <small>
+                    Secure industrial network
+                </small>
+
+            </div>
+
+            <div class="footer-version">
+                PLANT-GPT v1.0 · AI CORE
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+
+<!-- =========================
+     TOAST
+========================== -->
+
+<div
+    class="toast"
+    id="toast">
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
