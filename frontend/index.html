@@ -9,8 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -19,9 +21,7 @@
 
 <div class="app">
 
-    <!-- =========================
-         BACKGROUND
-    ========================== -->
+    <!-- BACKGROUND -->
 
     <div class="industrial-bg"></div>
     <div class="bg-overlay"></div>
@@ -30,30 +30,34 @@
     <div class="ambient ambient-two"></div>
     <div class="ambient ambient-three"></div>
 
-    <!-- =========================
-         TOP LEFT NEW CHAT
-    ========================== -->
 
-    <button class="new-chat-floating" id="newChatBtn">
+    <!-- NEW CHAT -->
+
+    <button
+        class="new-chat-floating"
+        id="newChatBtn"
+        type="button"
+    >
         <span class="new-chat-icon">+</span>
         <span>New Chat</span>
     </button>
 
 
-    <!-- =========================
-         TOP RIGHT SIDEBAR BUTTON
-    ========================== -->
+    <!-- SIDEBAR BUTTON -->
 
-    <button class="sidebar-open-btn" id="sidebarToggle" aria-label="Open sidebar">
+    <button
+        class="sidebar-open-btn"
+        id="sidebarToggle"
+        type="button"
+        aria-label="Open sidebar"
+    >
         <span></span>
         <span></span>
         <span></span>
     </button>
 
 
-    <!-- =========================
-         MAIN
-    ========================== -->
+    <!-- MAIN -->
 
     <main class="main">
 
@@ -84,17 +88,24 @@
         </div>
 
 
-        <!-- =========================
-             LANDING / CHAT AREA
-        ========================== -->
+        <!-- CHAT AREA -->
 
-        <section class="chat-area" id="chatScroll">
+        <section
+            class="chat-area"
+            id="chatScroll"
+        >
 
-            <div class="chat-container" id="chatLog">
+            <div
+                class="chat-container"
+                id="chatLog"
+            >
 
                 <!-- LANDING -->
 
-                <div class="landing" id="emptyState">
+                <div
+                    class="landing"
+                    id="emptyState"
+                >
 
                     <div class="company-name">
                         INDUSTRIAL AI
@@ -102,7 +113,9 @@
 
                     <div class="brand-badge">
                         <span class="brand-line"></span>
-                        <span>PRIVATE 5G · RAG INTELLIGENCE</span>
+                        <span>
+                            PRIVATE 5G · RAG INTELLIGENCE
+                        </span>
                         <span class="brand-line"></span>
                     </div>
 
@@ -120,15 +133,19 @@
                     </p>
 
 
-                    <!-- SEARCH -->
+                    <!-- MAIN SEARCH -->
 
-                    <form class="hero-search" id="composerForm">
+                    <form
+                        class="hero-search"
+                        id="composerForm"
+                    >
 
                         <button
                             type="button"
                             class="search-icon-btn"
                             id="attachBtn"
-                            title="Attach PDF">
+                            title="Attach PDF"
+                        >
 
                             <svg viewBox="0 0 24 24">
                                 <path d="M21 12.5V6a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6"/>
@@ -149,7 +166,8 @@
                             type="button"
                             class="mic-button"
                             id="micBtn"
-                            title="Voice input">
+                            title="Voice input"
+                        >
 
                             <svg viewBox="0 0 24 24">
                                 <rect x="9" y="2" width="6" height="12" rx="3"/>
@@ -163,7 +181,8 @@
                         <button
                             type="submit"
                             class="send-button"
-                            id="sendBtn">
+                            id="sendBtn"
+                        >
 
                             <svg viewBox="0 0 24 24">
                                 <path d="M4 12h15"/>
@@ -185,30 +204,32 @@
                     <div class="suggestions">
 
                         <button
+                            type="button"
                             class="suggestion"
-                            data-q="What is the recommended lubrication interval for the Line 4 compressor bearings?">
-
+                            data-q="What is the recommended lubrication interval for the Line 4 compressor bearings?"
+                        >
                             <span>⚙</span>
                             Compressor maintenance
-
                         </button>
 
-                        <button
-                            class="suggestion"
-                            data-q="Line 4 compressor ka maintenance schedule kya hai?">
 
+                        <button
+                            type="button"
+                            class="suggestion"
+                            data-q="Line 4 compressor ka maintenance schedule kya hai?"
+                        >
                             <span>◈</span>
                             Maintenance schedule
-
                         </button>
 
-                        <button
-                            class="suggestion"
-                            data-q="सुरक्षा वाल्व की जांच कितनी बार करनी चाहिए?">
 
+                        <button
+                            type="button"
+                            class="suggestion"
+                            data-q="सुरक्षा वाल्व की जांच कितनी बार करनी चाहिए?"
+                        >
                             <span>△</span>
                             Safety inspection
-
                         </button>
 
                     </div>
@@ -247,21 +268,26 @@
         </section>
 
 
-        <!-- =========================
-             CHAT COMPOSER
-        ========================== -->
+        <!-- BOTTOM CHAT COMPOSER -->
 
-        <div class="bottom-composer" id="bottomComposer">
+        <div
+            class="bottom-composer"
+            id="bottomComposer"
+        >
 
-            <form class="composer-inner">
+            <form
+                class="composer-inner"
+                id="bottomComposerForm"
+            >
 
                 <button
                     type="button"
                     class="composer-icon"
-                    id="bottomAttachBtn">
-
+                    id="bottomAttachBtn"
+                >
                     +
                 </button>
+
 
                 <textarea
                     id="bottomMessageInput"
@@ -269,20 +295,22 @@
                     placeholder="Ask about manuals, SOPs or fault codes..."
                 ></textarea>
 
+
                 <button
                     type="button"
                     class="composer-mic"
-                    id="bottomMicBtn">
-
+                    id="bottomMicBtn"
+                >
                     🎙
                 </button>
 
+
                 <button
                     type="submit"
-                    class="composer-send">
-
+                    class="composer-send"
+                    id="bottomSendBtn"
+                >
                     ➜
-
                 </button>
 
             </form>
@@ -292,15 +320,17 @@
     </main>
 
 
-    <!-- =========================
-         SIDEBAR
-    ========================== -->
+    <!-- SIDEBAR -->
 
-    <aside class="sidebar" id="sidebar">
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
 
         <div class="sidebar-header">
 
             <div>
+
                 <div class="sidebar-brand">
                     PLANT-GPT
                 </div>
@@ -308,9 +338,13 @@
                 <div class="sidebar-sub">
                     PLANT INTELLIGENCE SYSTEM
                 </div>
+
             </div>
 
-            <button id="sidebarClose">
+            <button
+                id="sidebarClose"
+                type="button"
+            >
                 ×
             </button>
 
@@ -325,24 +359,31 @@
                 KNOWLEDGE BASE
             </div>
 
+
             <label
                 class="upload-box"
                 for="fileInput"
-                id="uploadZone">
+                id="uploadZone"
+            >
 
                 <div class="upload-symbol">
                     ↑
                 </div>
 
                 <div>
-                    <strong>Upload PDF</strong>
+
+                    <strong>
+                        Upload PDF
+                    </strong>
 
                     <span>
                         Manuals · SOP · Maintenance
                     </span>
+
                 </div>
 
             </label>
+
 
             <input
                 type="file"
@@ -355,7 +396,8 @@
 
             <ul
                 class="document-list"
-                id="docList">
+                id="docList"
+            >
             </ul>
 
         </section>
@@ -363,7 +405,9 @@
 
         <!-- SEARCH HISTORY -->
 
-        <section class="sidebar-section history-section">
+        <section
+            class="sidebar-section history-section"
+        >
 
             <div class="section-title">
                 SEARCH HISTORY
@@ -401,6 +445,7 @@
 
             </div>
 
+
             <div class="footer-version">
                 PLANT-GPT v1.0 · AI CORE
             </div>
@@ -412,17 +457,21 @@
 </div>
 
 
-<!-- =========================
-     TOAST
-========================== -->
+<!-- TOAST -->
 
 <div
     class="toast"
-    id="toast">
+    id="toast"
+>
 </div>
 
 
-<script src="script.js"></script>
+<!-- =====================================================
+     IMPORTANT:
+     CACHE-BUSTED JAVASCRIPT
+===================================================== -->
+
+<script src="script.js?v=999"></script>
 
 </body>
 </html>

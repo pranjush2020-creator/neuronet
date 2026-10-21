@@ -3,10 +3,12 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 from app.config import CHROMA_DB_PATH, COLLECTION_NAME, EMBEDDING_MODEL, TOP_K
 
-# Load embedding model once at startup (runs locally, no API key needed)
+
+# Load embedding model once at startup
 _embedder = SentenceTransformer(EMBEDDING_MODEL)
 
-# Persistent Chroma client — data survives server restarts
+
+# Connect to the existing persistent Chroma database
 _client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 _collection = _client.get_or_create_collection(name=COLLECTION_NAME)
 
@@ -22,7 +24,15 @@ def add_chunks(chunks: list[str], source: str) -> int:
         return 0
 
     ids = [f"{source}__{uuid.uuid4().hex[:8]}" for _ in chunks]
-    metadatas = [{"source": source, "chunk_id": ids[i]} for i in range(len(chunks))]
+
+    metadatas = [
+        {
+            "source": source,
+            "chunk_id": ids[i]
+        }
+        for i in range(len(chunks))
+    ]
+
     embeddings = embed_texts(chunks)
 
     _collection.add(
@@ -31,12 +41,15 @@ def add_chunks(chunks: list[str], source: str) -> int:
         documents=chunks,
         metadatas=metadatas,
     )
+
     return len(chunks)
 
 
 def query_similar(question: str, top_k: int = None):
-    """Return the top_k most relevant chunks for a question."""
+    """Return the most relevant chunks for a question."""
+
     top_k = top_k or TOP_K
+
     query_embedding = embed_texts([question])[0]
 
     results = _collection.query(
@@ -45,25 +58,61 @@ def query_similar(question: str, top_k: int = None):
     )
 
     matches = []
+
     docs = results.get("documents", [[]])[0]
     metas = results.get("metadatas", [[]])[0]
+    ids = results.get("ids", [[]])[0]
     distances = results.get("distances", [[]])[0]
 
-    for doc, meta, dist in zip(docs, metas, distances):
+    for doc, meta, chunk_id, dist in zip(
+        docs,
+        metas,
+        ids,
+        distances
+    ):
+
+        # Existing database has None metadata.
+        # Therefore safely handle missing metadata.
+        meta = meta or {}
+
+        source = meta.get("source")
+
+        # If no source metadata exists, use a readable fallback.
+        if not source:
+            source = "Industrial Manual"
+
         matches.append({
             "text": doc,
-            "source": meta.get("source", "unknown"),
-            "chunk_id": meta.get("chunk_id", ""),
+            "source": source,
+            "chunk_id": meta.get("chunk_id", chunk_id),
             "score": dist,
         })
+
     return matches
 
 
 def list_documents():
-    """Return distinct source filenames and their chunk counts currently stored."""
+    """Return distinct source filenames and their chunk counts."""
+
     all_items = _collection.get()
+
     counts = {}
+
     for meta in all_items.get("metadatas", []):
-        source = meta.get("source", "unknown")
+
+        meta = meta or {}
+
+        source = meta.get("source")
+
+        if not source:
+            source = "Industrial Manual"
+
         counts[source] = counts.get(source, 0) + 1
-    return [{"filename": k, "chunk_count": v} for k, v in counts.items()]
+
+    return [
+        {
+            "filename": filename,
+            "chunk_count": count
+        }
+        for filename, count in counts.items()
+    ]

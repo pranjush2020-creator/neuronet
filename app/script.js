@@ -1,358 +1,94 @@
 /* =========================================================
    PLANT-GPT
-   PREMIUM INDUSTRIAL AI FRONTEND
+   SIMPLE WORKING INDUSTRIAL AI FRONTEND
 ========================================================= */
 
-(() => {
+(function () {
 
     "use strict";
 
+    /* =====================================================
+       BACKEND URL
+    ===================================================== */
+
+    const API_URL = "http://51.0.0.31:8000/ask";
+
 
     /* =====================================================
-       DOM
+       DOM ELEMENTS
     ===================================================== */
 
     const chatLog = document.getElementById("chatLog");
-
-    const chatScroll = document.getElementById("chatScroll");
-
     const emptyState = document.getElementById("emptyState");
 
-    const composerForm = document.getElementById("composerForm");
+    const composerForm =
+        document.getElementById("composerForm");
 
-    const messageInput = document.getElementById("messageInput");
+    const messageInput =
+        document.getElementById("messageInput");
 
-    const sendBtn = document.getElementById("sendBtn");
+    const sendBtn =
+        document.getElementById("sendBtn");
 
-    const micBtn = document.getElementById("micBtn");
+    const bottomComposer =
+        document.getElementById("bottomComposer");
 
-    const attachBtn = document.getElementById("attachBtn");
+    const bottomComposerForm =
+        document.getElementById("bottomComposerForm");
 
-    const fileInput = document.getElementById("fileInput");
+    const bottomMessageInput =
+        document.getElementById("bottomMessageInput");
 
-    const uploadZone = document.getElementById("uploadZone");
-
-    const docList = document.getElementById("docList");
-
-    const historyList = document.getElementById("historyList");
-
-    const newChatBtn = document.getElementById("newChatBtn");
-
-    const sidebar = document.getElementById("sidebar");
-
-    const sidebarToggle = document.getElementById("sidebarToggle");
-
-    const sidebarClose = document.getElementById("sidebarClose");
-
-    const toast = document.getElementById("toast");
-
-    const bottomComposer = document.getElementById("bottomComposer");
+    const bottomSendBtn =
+        document.getElementById("bottomSendBtn");
 
 
     /* =====================================================
        STATE
     ===================================================== */
 
-    let sessions = [];
-
-    let activeSessionId = null;
-
-    let uploadedDocs = [];
-
-    let isListening = false;
-
-    let recognition = null;
+    let isSending = false;
 
 
     /* =====================================================
-       SESSION
+       CHECK FRONTEND
     ===================================================== */
 
-    function createSession() {
-
-        const session = {
-
-            id: "session_" + Date.now(),
-
-            title: "New Chat",
-
-            messages: []
-
-        };
+    console.log("=================================");
+    console.log("PLANT-GPT FRONTEND LOADED");
+    console.log("API:", API_URL);
+    console.log("=================================");
 
 
-        sessions.unshift(session);
-
-        activeSessionId = session.id;
-
-
-        renderHistory();
-
-        renderChat();
-
-
-        emptyState.style.display = "flex";
-
-
-        closeSidebar();
+    if (!composerForm) {
+        console.error("ERROR: composerForm not found");
     }
 
+    if (!messageInput) {
+        console.error("ERROR: messageInput not found");
+    }
 
-    function getActiveSession() {
-
-        return sessions.find(
-            session => session.id === activeSessionId
-        );
+    if (!chatLog) {
+        console.error("ERROR: chatLog not found");
     }
 
 
     /* =====================================================
-       DATE HELPERS
+       ADD MESSAGE
     ===================================================== */
 
-    function getDateLabel(date) {
+    function addMessage(text, type) {
 
-        const today = new Date();
-
-        const yesterday = new Date();
-
-        yesterday.setDate(today.getDate() - 1);
-
-
-        if (
-            date.toDateString() ===
-            today.toDateString()
-        ) {
-
-            return "TODAY";
-
-        }
-
-
-        if (
-            date.toDateString() ===
-            yesterday.toDateString()
-        ) {
-
-            return "YESTERDAY";
-
-        }
-
-
-        return date.toLocaleDateString(
-            "en-IN",
-            {
-                day: "2-digit",
-                month: "short",
-                year: "numeric"
-            }
-        ).toUpperCase();
-
-    }
-
-
-    function getTime(date) {
-
-        return date.toLocaleTimeString(
-            "en-IN",
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       HISTORY
-    ===================================================== */
-
-    function renderHistory() {
-
-        historyList.innerHTML = "";
-
-
-        if (!sessions.length) {
-
-            historyList.innerHTML = `
-                <div class="history-query">
-                    No searches yet
-                </div>
-            `;
-
+        if (!chatLog) {
             return;
         }
-
-
-        const groups = {};
-
-
-        sessions.forEach(session => {
-
-            if (!session.messages.length)
-                return;
-
-
-            const firstMessage = session.messages.find(
-                m => m.role === "user"
-            );
-
-
-            if (!firstMessage)
-                return;
-
-
-            const date = new Date(firstMessage.timestamp);
-
-            const label = getDateLabel(date);
-
-
-            if (!groups[label]) {
-
-                groups[label] = [];
-
-            }
-
-
-            groups[label].push({
-
-                session,
-
-                date,
-
-                text: firstMessage.text
-
-            });
-
-        });
-
-
-        Object.keys(groups).forEach(label => {
-
-            const dateHeading =
-                document.createElement("div");
-
-            dateHeading.className =
-                "history-date";
-
-            dateHeading.textContent = label;
-
-            historyList.appendChild(dateHeading);
-
-
-            groups[label].forEach(item => {
-
-                const div =
-                    document.createElement("div");
-
-                div.className =
-                    "history-item";
-
-
-                div.innerHTML = `
-
-                    <span class="history-time">
-                        ${getTime(item.date)}
-                    </span>
-
-                    <span class="history-query">
-                        ${escapeHtml(item.text)}
-                    </span>
-
-                `;
-
-
-                div.addEventListener(
-                    "click",
-                    () => {
-
-                        activeSessionId =
-                            item.session.id;
-
-                        renderChat();
-
-                        closeSidebar();
-
-                    }
-                );
-
-
-                historyList.appendChild(div);
-
-            });
-
-        });
-
-    }
-
-
-    /* =====================================================
-       CHAT RENDER
-    ===================================================== */
-
-    function renderChat() {
-
-        const session = getActiveSession();
-
-
-        chatLog
-            .querySelectorAll(
-                ".msg, .typing"
-            )
-            .forEach(
-                el => el.remove()
-            );
-
-
-        if (
-            !session ||
-            session.messages.length === 0
-        ) {
-
-            emptyState.style.display = "flex";
-
-            bottomComposer.classList.remove(
-                "visible"
-            );
-
-            return;
-
-        }
-
-
-        emptyState.style.display = "none";
-
-        bottomComposer.classList.add(
-            "visible"
-        );
-
-
-        session.messages.forEach(
-            message => appendMessageEl(message)
-        );
-
-
-        scrollToBottom();
-
-    }
-
-
-    /* =====================================================
-       MESSAGE
-    ===================================================== */
-
-    function appendMessageEl(msg) {
 
         const row =
             document.createElement("div");
 
-
         row.className =
             "msg " +
-            (msg.role === "user"
-                ? "user"
-                : "ai");
+            (type === "user" ? "user" : "ai");
 
 
         const avatar =
@@ -362,15 +98,15 @@
             "avatar";
 
         avatar.textContent =
-            msg.role === "user"
+            type === "user"
                 ? "YOU"
                 : "AI";
 
 
-        const col =
+        const bubbleCol =
             document.createElement("div");
 
-        col.className =
+        bubbleCol.className =
             "bubble-col";
 
 
@@ -381,372 +117,128 @@
             "bubble";
 
         bubble.textContent =
-            msg.text;
+            text;
 
 
-        col.appendChild(bubble);
-
-
-        if (
-            msg.citations &&
-            msg.citations.length
-        ) {
-
-            const citationRow =
-                document.createElement("div");
-
-            citationRow.className =
-                "citation-row";
-
-
-            msg.citations.forEach(
-                citation => {
-
-                    const chip =
-                        document.createElement("span");
-
-                    chip.className =
-                        "citation-chip";
-
-                    chip.textContent =
-                        "📄 " + citation;
-
-                    citationRow.appendChild(
-                        chip
-                    );
-
-                }
-            );
-
-
-            col.appendChild(
-                citationRow
-            );
-
-        }
-
-
-        const meta =
-            document.createElement("div");
-
-        meta.className =
-            "msg-meta";
-
-
-        const date =
-            new Date(msg.timestamp);
-
-
-        meta.textContent =
-            getTime(date);
-
-
-        col.appendChild(meta);
-
+        bubbleCol.appendChild(bubble);
 
         row.appendChild(avatar);
 
-        row.appendChild(col);
-
+        row.appendChild(bubbleCol);
 
         chatLog.appendChild(row);
 
+
+        chatLog.scrollTop =
+            chatLog.scrollHeight;
     }
 
 
     /* =====================================================
-       TYPING
+       TYPING INDICATOR
     ===================================================== */
 
-    function appendTypingIndicator() {
+    function showTyping() {
+
+        if (!chatLog) {
+            return;
+        }
+
+        removeTyping();
+
 
         const row =
             document.createElement("div");
 
+        row.id =
+            "plantGPTTyping";
 
         row.className =
             "msg ai typing";
 
-        row.id =
-            "typingRow";
-
 
         row.innerHTML = `
-
-            <div class="avatar">
-                AI
-            </div>
+            <div class="avatar">AI</div>
 
             <div class="bubble-col">
 
                 <div class="bubble">
-
                     <span>●</span>
                     <span>●</span>
                     <span>●</span>
-
                 </div>
 
             </div>
-
         `;
 
 
         chatLog.appendChild(row);
 
-        scrollToBottom();
-
+        chatLog.scrollTop =
+            chatLog.scrollHeight;
     }
 
 
-    function removeTypingIndicator() {
+    function removeTyping() {
 
-        const row =
+        const old =
             document.getElementById(
-                "typingRow"
+                "plantGPTTyping"
             );
 
-
-        if (row)
-            row.remove();
-
+        if (old) {
+            old.remove();
+        }
     }
 
 
     /* =====================================================
-       SEND
+       SEND MESSAGE TO BACKEND
     ===================================================== */
 
-    async function handleSend(text) {
+    async function sendToBackend(question) {
 
-        text = text.trim();
-
-
-        if (!text)
-            return;
-
-
-        let session =
-            getActiveSession();
-
-
-        if (!session) {
-
-            createSession();
-
-            session =
-                getActiveSession();
-
-        }
-
-
-        emptyState.style.display =
-            "none";
-
-
-        bottomComposer.classList.add(
-            "visible"
+        console.log(
+            "Sending to backend:",
+            question
         );
-
-
-        const now =
-            new Date();
-
-
-        const userMsg = {
-
-            role: "user",
-
-            text,
-
-            timestamp:
-                now.toISOString(),
-
-            time:
-                getTime(now)
-
-        };
-
-
-        session.messages.push(
-            userMsg
-        );
-
-
-        appendMessageEl(
-            userMsg
-        );
-
-
-        scrollToBottom();
-
-
-        if (
-            session.title ===
-            "New Chat"
-        ) {
-
-            session.title =
-                text.length > 40
-                    ? text.slice(0, 40) + "…"
-                    : text;
-
-        }
-
-
-        renderHistory();
-
-
-        messageInput.value = "";
-
-        autosizeInput();
-
-
-        appendTypingIndicator();
-
-
-        try {
-
-            const result =
-                await getAIResponse(
-                    text
-                );
-
-
-            removeTypingIndicator();
-
-
-            const aiNow =
-                new Date();
-
-
-            const aiMsg = {
-
-                role: "ai",
-
-                text:
-                    result.answer,
-
-                citations:
-                    result.citations || [],
-
-                timestamp:
-                    aiNow.toISOString(),
-
-                time:
-                    getTime(aiNow)
-
-            };
-
-
-            session.messages.push(
-                aiMsg
-            );
-
-
-            appendMessageEl(
-                aiMsg
-            );
-
-
-            renderHistory();
-
-            scrollToBottom();
-
-
-        } catch (error) {
-
-            removeTypingIndicator();
-
-
-            const errorMsg = {
-
-                role: "ai",
-
-                text:
-                    "⚠ Unable to connect to the AI backend. Please check whether your Python backend and Ollama are running.",
-
-                citations: [],
-
-                timestamp:
-                    new Date().toISOString()
-
-            };
-
-
-            session.messages.push(
-                errorMsg
-            );
-
-
-            appendMessageEl(
-                errorMsg
-            );
-
-
-            console.error(error);
-
-        }
-
-    }
-
-
-    /* =====================================================
-       BACKEND
-    ===================================================== */
-
-    async function getAIResponse(question) {
-
-        /*
-        =====================================================
-        IMPORTANT
-
-        Replace this URL with your Python backend.
-
-        Example:
-
-        http://127.0.0.1:5000/api/chat
-
-        =====================================================
-        */
 
 
         const response =
             await fetch(
-                "http://127.0.0.1:5000/api/chat",
+                API_URL,
                 {
-
                     method: "POST",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
-
                     },
 
-                    body: JSON.stringify({
+                    body:
+                        JSON.stringify({
+                            question:
+                                question,
 
-                        question: question,
-
-                        lang:
-                            "en-IN",
-
-                        session_id:
-                            activeSessionId
-
-                    })
-
+                            language:
+                                "en-IN"
+                        })
                 }
             );
+
+
+        console.log(
+            "Backend HTTP status:",
+            response.status
+        );
 
 
         if (!response.ok) {
 
             throw new Error(
-                "Backend request failed"
+                "Backend HTTP " +
+                response.status
             );
-
         }
 
 
@@ -754,531 +246,306 @@
             await response.json();
 
 
-        return {
+        console.log(
+            "Backend data:",
+            data
+        );
 
-            answer:
-                data.answer,
 
-            citations:
-                data.citations || []
-
-        };
-
+        return data;
     }
 
 
     /* =====================================================
-       FORM
+       MAIN SEND FUNCTION
     ===================================================== */
 
-    composerForm.addEventListener(
-        "submit",
-        event => {
+    async function handleSend(question) {
 
-            event.preventDefault();
+        question =
+            String(
+                question || ""
+            ).trim();
 
-            handleSend(
-                messageInput.value
+
+        if (!question) {
+            return;
+        }
+
+
+        if (isSending) {
+            return;
+        }
+
+
+        isSending = true;
+
+
+        /* Disable buttons */
+
+        if (sendBtn) {
+            sendBtn.disabled = true;
+        }
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+        }
+
+
+        /* Hide welcome screen */
+
+        if (emptyState) {
+            emptyState.style.display =
+                "none";
+        }
+
+
+        /* Show bottom composer */
+
+        if (bottomComposer) {
+            bottomComposer.classList.add(
+                "visible"
+            );
+        }
+
+
+        /* Show user message */
+
+        addMessage(
+            question,
+            "user"
+        );
+
+
+        /* Clear inputs */
+
+        if (messageInput) {
+            messageInput.value = "";
+        }
+
+        if (bottomMessageInput) {
+            bottomMessageInput.value = "";
+        }
+
+
+        /* Show typing */
+
+        showTyping();
+
+
+        try {
+
+            const data =
+                await sendToBackend(
+                    question
+                );
+
+
+            removeTyping();
+
+
+            const answer =
+                data.answer ||
+                "No answer was returned by the AI.";
+
+
+            addMessage(
+                answer,
+                "ai"
             );
 
+
+        } catch (error) {
+
+            console.error(
+                "PLANT-GPT ERROR:",
+                error
+            );
+
+
+            removeTyping();
+
+
+            addMessage(
+                "⚠ AI backend connection failed. Please make sure the PLANT-GPT server is running on port 8000.",
+                "ai"
+            );
+
+        } finally {
+
+            isSending = false;
+
+
+            if (sendBtn) {
+                sendBtn.disabled = false;
+            }
+
+            if (bottomSendBtn) {
+                bottomSendBtn.disabled = false;
+            }
+
+
+            if (messageInput) {
+                messageInput.focus();
+            }
         }
-    );
+    }
 
 
-    messageInput.addEventListener(
-        "keydown",
-        event => {
+    /* =====================================================
+       MAIN FORM
+    ===================================================== */
 
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
+    if (composerForm) {
+
+        composerForm.addEventListener(
+            "submit",
+            function (event) {
 
                 event.preventDefault();
+
+                event.stopPropagation();
+
+
+                if (!messageInput) {
+                    return;
+                }
+
 
                 handleSend(
                     messageInput.value
                 );
 
             }
-
-        }
-    );
-
-
-    /* =====================================================
-       AUTOSIZE
-    ===================================================== */
-
-    function autosizeInput() {
-
-        messageInput.style.height =
-            "auto";
-
-
-        messageInput.style.height =
-            Math.min(
-                messageInput.scrollHeight,
-                140
-            ) + "px";
-
+        );
     }
 
 
-    messageInput.addEventListener(
-        "input",
-        autosizeInput
-    );
+    /* =====================================================
+       ENTER KEY
+    ===================================================== */
+
+    if (messageInput) {
+
+        messageInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    handleSend(
+                        messageInput.value
+                    );
+                }
+
+            }
+        );
+    }
 
 
     /* =====================================================
-       SUGGESTIONS
+       BOTTOM FORM
+    ===================================================== */
+
+    if (bottomComposerForm) {
+
+        bottomComposerForm.addEventListener(
+            "submit",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                if (!bottomMessageInput) {
+                    return;
+                }
+
+
+                handleSend(
+                    bottomMessageInput.value
+                );
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       BOTTOM ENTER KEY
+    ===================================================== */
+
+    if (bottomMessageInput) {
+
+        bottomMessageInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    handleSend(
+                        bottomMessageInput.value
+                    );
+                }
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       SUGGESTION BUTTONS
     ===================================================== */
 
     document
         .querySelectorAll(".suggestion")
-        .forEach(button => {
+        .forEach(
+            function (button) {
 
-            button.addEventListener(
-                "click",
-                () => {
+                button.addEventListener(
+                    "click",
+                    function (event) {
 
-                    handleSend(
-                        button.dataset.q
-                    );
+                        event.preventDefault();
 
-                }
-            );
+                        event.stopPropagation();
 
-        });
 
+                        const question =
+                            button.dataset.q ||
+                            button.textContent;
 
-    /* =====================================================
-       NEW CHAT
-    ===================================================== */
 
-    newChatBtn.addEventListener(
-        "click",
-        createSession
-    );
+                        handleSend(
+                            question
+                        );
 
-
-    /* =====================================================
-       PDF
-    ===================================================== */
-
-    attachBtn.addEventListener(
-        "click",
-        () => fileInput.click()
-    );
-
-
-    fileInput.addEventListener(
-        "change",
-        event => {
-
-            handleFiles(
-                event.target.files
-            );
-
-            fileInput.value = "";
-
-        }
-    );
-
-
-    ["dragenter", "dragover"]
-        .forEach(eventName => {
-
-            uploadZone.addEventListener(
-                eventName,
-                event => {
-
-                    event.preventDefault();
-
-                    uploadZone.style.borderColor =
-                        "var(--cyan)";
-
-                }
-            );
-
-        });
-
-
-    ["dragleave", "drop"]
-        .forEach(eventName => {
-
-            uploadZone.addEventListener(
-                eventName,
-                event => {
-
-                    event.preventDefault();
-
-                    uploadZone.style.borderColor =
-                        "";
-
-                }
-            );
-
-        });
-
-
-    uploadZone.addEventListener(
-        "drop",
-        event => {
-
-            handleFiles(
-                event.dataTransfer.files
-            );
-
-        }
-    );
-
-
-    function handleFiles(fileList) {
-
-        const files =
-            Array.from(fileList)
-                .filter(
-                    file =>
-                        file.type ===
-                        "application/pdf"
-                );
-
-
-        if (!files.length) {
-
-            showToast(
-                "Only PDF files are supported."
-            );
-
-            return;
-
-        }
-
-
-        files.forEach(file => {
-
-            const doc = {
-
-                name: file.name,
-
-                status: "indexing"
-
-            };
-
-
-            uploadedDocs.push(doc);
-
-            renderDocs();
-
-
-            /*
-            ============================================
-            REAL BACKEND PDF UPLOAD GOES HERE
-            ============================================
-
-            Later we can replace this simulation
-            with FormData + Python API.
-            */
-
-
-            setTimeout(
-                () => {
-
-                    doc.status =
-                        "ready";
-
-                    renderDocs();
-
-
-                    showToast(
-                        `"${file.name}" is ready.`
-                    );
-
-                },
-                1200
-            );
-
-        });
-
-    }
-
-
-    function renderDocs() {
-
-        docList.innerHTML = "";
-
-
-        uploadedDocs.forEach(
-            doc => {
-
-                const li =
-                    document.createElement(
-                        "li"
-                    );
-
-
-                li.className =
-                    "doc-item";
-
-
-                li.innerHTML = `
-
-                    <span>📄</span>
-
-                    <span class="doc-name">
-                        ${escapeHtml(doc.name)}
-                    </span>
-
-                    <span class="doc-status ${doc.status}">
-                        ${
-                            doc.status === "indexing"
-                            ? "INDEXING"
-                            : "READY"
-                        }
-                    </span>
-
-                `;
-
-
-                docList.appendChild(li);
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       VOICE
-    ===================================================== */
-
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-
-    if (SpeechRecognition) {
-
-        recognition =
-            new SpeechRecognition();
-
-
-        recognition.continuous =
-            false;
-
-        recognition.interimResults =
-            true;
-
-
-        recognition.addEventListener(
-            "result",
-            event => {
-
-                let transcript = "";
-
-
-                for (
-                    const result of
-                    event.results
-                ) {
-
-                    transcript +=
-                        result[0]
-                            .transcript;
-
-                }
-
-
-                messageInput.value =
-                    transcript;
-
-
-                autosizeInput();
-
-            }
-        );
-
-
-        recognition.addEventListener(
-            "end",
-            () => {
-
-                isListening = false;
-
-                micBtn.classList.remove(
-                    "listening"
+                    }
                 );
 
             }
         );
 
 
-        recognition.addEventListener(
-            "error",
-            () => {
-
-                isListening = false;
-
-                showToast(
-                    "Microphone access failed."
-                );
-
-            }
-        );
-
-    } else {
-
-        micBtn.disabled = true;
-
-    }
-
-
-    micBtn.addEventListener(
-        "click",
-        () => {
-
-            if (!recognition)
-                return;
-
-
-            if (isListening) {
-
-                recognition.stop();
-
-                isListening = false;
-
-                return;
-
-            }
-
-
-            recognition.lang =
-                "en-IN";
-
-
-            recognition.start();
-
-            isListening = true;
-
-
-            showToast(
-                "Listening..."
-            );
-
-        }
-    );
-
-
     /* =====================================================
-       SIDEBAR
+       DONE
     ===================================================== */
-
-    sidebarToggle.addEventListener(
-        "click",
-        () => {
-
-            sidebar.classList.add(
-                "open"
-            );
-
-        }
-    );
-
-
-    sidebarClose.addEventListener(
-        "click",
-        closeSidebar
-    );
-
-
-    function closeSidebar() {
-
-        sidebar.classList.remove(
-            "open"
-        );
-
-    }
-
-
-    /* =====================================================
-       TOAST
-    ===================================================== */
-
-    let toastTimer;
-
-
-    function showToast(message) {
-
-        clearTimeout(
-            toastTimer
-        );
-
-
-        toast.textContent =
-            message;
-
-
-        toast.classList.add(
-            "show"
-        );
-
-
-        toastTimer =
-            setTimeout(
-                () => {
-
-                    toast.classList.remove(
-                        "show"
-                    );
-
-                },
-                2600
-            );
-
-    }
-
-
-    /* =====================================================
-       UTIL
-    ===================================================== */
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement(
-                "div"
-            );
-
-
-        div.textContent =
-            value;
-
-
-        return div.innerHTML;
-
-    }
-
-
-    function scrollToBottom() {
-
-        requestAnimationFrame(
-            () => {
-
-                chatScroll.scrollTop =
-                    chatScroll.scrollHeight;
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       INIT
-    ===================================================== */
-
-    createSession();
 
 })();

@@ -1,358 +1,150 @@
 /* =========================================================
    PLANT-GPT
-   PREMIUM INDUSTRIAL AI FRONTEND
+   SIMPLE WORKING INDUSTRIAL AI FRONTEND
 ========================================================= */
 
-(() => {
+(function () {
 
     "use strict";
 
+    /* =====================================================
+       BACKEND URL
+    ===================================================== */
+
+    const API_URL = "http://127.0.0.1:8000/ask";
+
 
     /* =====================================================
-       DOM
+       DOM ELEMENTS
     ===================================================== */
 
     const chatLog = document.getElementById("chatLog");
-
-    const chatScroll = document.getElementById("chatScroll");
-
     const emptyState = document.getElementById("emptyState");
 
-    const composerForm = document.getElementById("composerForm");
+    const composerForm =
+        document.getElementById("composerForm");
 
-    const messageInput = document.getElementById("messageInput");
+    const messageInput =
+        document.getElementById("messageInput");
 
-    const sendBtn = document.getElementById("sendBtn");
+    const sendBtn =
+        document.getElementById("sendBtn");
 
-    const micBtn = document.getElementById("micBtn");
+    const bottomComposer =
+        document.getElementById("bottomComposer");
 
-    const attachBtn = document.getElementById("attachBtn");
+    const bottomComposerForm =
+        document.getElementById("bottomComposerForm");
 
-    const fileInput = document.getElementById("fileInput");
+    const bottomMessageInput =
+        document.getElementById("bottomMessageInput");
 
-    const uploadZone = document.getElementById("uploadZone");
+    const bottomSendBtn =
+        document.getElementById("bottomSendBtn");
 
-    const docList = document.getElementById("docList");
 
-    const historyList = document.getElementById("historyList");
+    /* =====================================================
+       MICROPHONE BUTTONS
+    ===================================================== */
 
-    const newChatBtn = document.getElementById("newChatBtn");
+    const micBtn =
+        document.getElementById("micBtn");
 
-    const sidebar = document.getElementById("sidebar");
-
-    const sidebarToggle = document.getElementById("sidebarToggle");
-
-    const sidebarClose = document.getElementById("sidebarClose");
-
-    const toast = document.getElementById("toast");
-
-    const bottomComposer = document.getElementById("bottomComposer");
+    const bottomMicBtn =
+        document.getElementById("bottomMicBtn");
 
 
     /* =====================================================
        STATE
     ===================================================== */
 
-    let sessions = [];
-
-    let activeSessionId = null;
-
-    let uploadedDocs = [];
-
+    let isSending = false;
     let isListening = false;
 
-    let recognition = null;
-
 
     /* =====================================================
-       SESSION
+       CHECK FRONTEND
     ===================================================== */
 
-    function createSession() {
-
-        const session = {
-
-            id: "session_" + Date.now(),
-
-            title: "New Chat",
-
-            messages: []
-
-        };
+    console.log("=================================");
+    console.log("PLANT-GPT FRONTEND LOADED");
+    console.log("API:", API_URL);
+    console.log("=================================");
 
 
-        sessions.unshift(session);
-
-        activeSessionId = session.id;
-
-
-        renderHistory();
-
-        renderChat();
-
-
-        emptyState.style.display = "flex";
-
-
-        closeSidebar();
+    if (!composerForm) {
+        console.error("ERROR: composerForm not found");
     }
 
+    if (!messageInput) {
+        console.error("ERROR: messageInput not found");
+    }
 
-    function getActiveSession() {
-
-        return sessions.find(
-            session => session.id === activeSessionId
-        );
+    if (!chatLog) {
+        console.error("ERROR: chatLog not found");
     }
 
 
     /* =====================================================
-       DATE HELPERS
+       TEXT TO SPEECH
     ===================================================== */
 
-    function getDateLabel(date) {
+    function speakAnswer(text) {
 
-        const today = new Date();
+        if (!("speechSynthesis" in window)) {
 
-        const yesterday = new Date();
-
-        yesterday.setDate(today.getDate() - 1);
-
-
-        if (
-            date.toDateString() ===
-            today.toDateString()
-        ) {
-
-            return "TODAY";
-
-        }
-
-
-        if (
-            date.toDateString() ===
-            yesterday.toDateString()
-        ) {
-
-            return "YESTERDAY";
-
-        }
-
-
-        return date.toLocaleDateString(
-            "en-IN",
-            {
-                day: "2-digit",
-                month: "short",
-                year: "numeric"
-            }
-        ).toUpperCase();
-
-    }
-
-
-    function getTime(date) {
-
-        return date.toLocaleTimeString(
-            "en-IN",
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       HISTORY
-    ===================================================== */
-
-    function renderHistory() {
-
-        historyList.innerHTML = "";
-
-
-        if (!sessions.length) {
-
-            historyList.innerHTML = `
-                <div class="history-query">
-                    No searches yet
-                </div>
-            `;
-
-            return;
-        }
-
-
-        const groups = {};
-
-
-        sessions.forEach(session => {
-
-            if (!session.messages.length)
-                return;
-
-
-            const firstMessage = session.messages.find(
-                m => m.role === "user"
-            );
-
-
-            if (!firstMessage)
-                return;
-
-
-            const date = new Date(firstMessage.timestamp);
-
-            const label = getDateLabel(date);
-
-
-            if (!groups[label]) {
-
-                groups[label] = [];
-
-            }
-
-
-            groups[label].push({
-
-                session,
-
-                date,
-
-                text: firstMessage.text
-
-            });
-
-        });
-
-
-        Object.keys(groups).forEach(label => {
-
-            const dateHeading =
-                document.createElement("div");
-
-            dateHeading.className =
-                "history-date";
-
-            dateHeading.textContent = label;
-
-            historyList.appendChild(dateHeading);
-
-
-            groups[label].forEach(item => {
-
-                const div =
-                    document.createElement("div");
-
-                div.className =
-                    "history-item";
-
-
-                div.innerHTML = `
-
-                    <span class="history-time">
-                        ${getTime(item.date)}
-                    </span>
-
-                    <span class="history-query">
-                        ${escapeHtml(item.text)}
-                    </span>
-
-                `;
-
-
-                div.addEventListener(
-                    "click",
-                    () => {
-
-                        activeSessionId =
-                            item.session.id;
-
-                        renderChat();
-
-                        closeSidebar();
-
-                    }
-                );
-
-
-                historyList.appendChild(div);
-
-            });
-
-        });
-
-    }
-
-
-    /* =====================================================
-       CHAT RENDER
-    ===================================================== */
-
-    function renderChat() {
-
-        const session = getActiveSession();
-
-
-        chatLog
-            .querySelectorAll(
-                ".msg, .typing"
-            )
-            .forEach(
-                el => el.remove()
-            );
-
-
-        if (
-            !session ||
-            session.messages.length === 0
-        ) {
-
-            emptyState.style.display = "flex";
-
-            bottomComposer.classList.remove(
-                "visible"
+            alert(
+                "Text-to-Speech is not supported by this browser."
             );
 
             return;
-
         }
 
+        /* Stop any speech that is already playing */
 
-        emptyState.style.display = "none";
-
-        bottomComposer.classList.add(
-            "visible"
-        );
+        window.speechSynthesis.cancel();
 
 
-        session.messages.forEach(
-            message => appendMessageEl(message)
-        );
+        /* Create speech */
+
+        const speech =
+            new SpeechSynthesisUtterance(text);
 
 
-        scrollToBottom();
+        /* Indian English */
 
+        speech.lang = "en-IN";
+
+
+        /* Speech settings */
+
+        speech.rate = 1;
+        speech.pitch = 1;
+        speech.volume = 1;
+
+
+        /* Speak */
+
+        window.speechSynthesis.speak(speech);
     }
 
 
     /* =====================================================
-       MESSAGE
+       ADD MESSAGE
     ===================================================== */
 
-    function appendMessageEl(msg) {
+    function addMessage(text, type) {
+
+        if (!chatLog) {
+            return;
+        }
 
         const row =
             document.createElement("div");
 
-
         row.className =
             "msg " +
-            (msg.role === "user"
-                ? "user"
-                : "ai");
+            (type === "user" ? "user" : "ai");
 
 
         const avatar =
@@ -362,15 +154,15 @@
             "avatar";
 
         avatar.textContent =
-            msg.role === "user"
+            type === "user"
                 ? "YOU"
                 : "AI";
 
 
-        const col =
+        const bubbleCol =
             document.createElement("div");
 
-        col.className =
+        bubbleCol.className =
             "bubble-col";
 
 
@@ -381,372 +173,175 @@
             "bubble";
 
         bubble.textContent =
-            msg.text;
+            text;
 
 
-        col.appendChild(bubble);
+        /* =================================================
+           ADD SPEAK BUTTON TO AI MESSAGES
+        ================================================= */
+
+        bubbleCol.appendChild(bubble);
 
 
-        if (
-            msg.citations &&
-            msg.citations.length
-        ) {
+        if (type === "ai") {
 
-            const citationRow =
-                document.createElement("div");
-
-            citationRow.className =
-                "citation-row";
+            const speakBtn =
+                document.createElement("button");
 
 
-            msg.citations.forEach(
-                citation => {
+            speakBtn.type =
+                "button";
 
-                    const chip =
-                        document.createElement("span");
 
-                    chip.className =
-                        "citation-chip";
+            speakBtn.className =
+                "speak-btn";
 
-                    chip.textContent =
-                        "📄 " + citation;
 
-                    citationRow.appendChild(
-                        chip
-                    );
+            speakBtn.textContent =
+                "🔊 Speak";
+
+
+            speakBtn.title =
+                "Read this answer aloud";
+
+
+            speakBtn.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    speakAnswer(text);
 
                 }
             );
 
 
-            col.appendChild(
-                citationRow
+            bubbleCol.appendChild(
+                speakBtn
             );
-
         }
-
-
-        const meta =
-            document.createElement("div");
-
-        meta.className =
-            "msg-meta";
-
-
-        const date =
-            new Date(msg.timestamp);
-
-
-        meta.textContent =
-            getTime(date);
-
-
-        col.appendChild(meta);
 
 
         row.appendChild(avatar);
 
-        row.appendChild(col);
-
+        row.appendChild(bubbleCol);
 
         chatLog.appendChild(row);
 
+
+        chatLog.scrollTop =
+            chatLog.scrollHeight;
     }
 
 
     /* =====================================================
-       TYPING
+       TYPING INDICATOR
     ===================================================== */
 
-    function appendTypingIndicator() {
+    function showTyping() {
+
+        if (!chatLog) {
+            return;
+        }
+
+        removeTyping();
+
 
         const row =
             document.createElement("div");
 
+        row.id =
+            "plantGPTTyping";
 
         row.className =
             "msg ai typing";
 
-        row.id =
-            "typingRow";
-
 
         row.innerHTML = `
-
-            <div class="avatar">
-                AI
-            </div>
+            <div class="avatar">AI</div>
 
             <div class="bubble-col">
 
                 <div class="bubble">
-
                     <span>●</span>
                     <span>●</span>
                     <span>●</span>
-
                 </div>
 
             </div>
-
         `;
 
 
         chatLog.appendChild(row);
 
-        scrollToBottom();
-
+        chatLog.scrollTop =
+            chatLog.scrollHeight;
     }
 
 
-    function removeTypingIndicator() {
+    function removeTyping() {
 
-        const row =
+        const old =
             document.getElementById(
-                "typingRow"
+                "plantGPTTyping"
             );
 
-
-        if (row)
-            row.remove();
-
+        if (old) {
+            old.remove();
+        }
     }
 
 
     /* =====================================================
-       SEND
+       SEND MESSAGE TO BACKEND
     ===================================================== */
 
-    async function handleSend(text) {
+    async function sendToBackend(question) {
 
-        text = text.trim();
-
-
-        if (!text)
-            return;
-
-
-        let session =
-            getActiveSession();
-
-
-        if (!session) {
-
-            createSession();
-
-            session =
-                getActiveSession();
-
-        }
-
-
-        emptyState.style.display =
-            "none";
-
-
-        bottomComposer.classList.add(
-            "visible"
+        console.log(
+            "Sending to backend:",
+            question
         );
-
-
-        const now =
-            new Date();
-
-
-        const userMsg = {
-
-            role: "user",
-
-            text,
-
-            timestamp:
-                now.toISOString(),
-
-            time:
-                getTime(now)
-
-        };
-
-
-        session.messages.push(
-            userMsg
-        );
-
-
-        appendMessageEl(
-            userMsg
-        );
-
-
-        scrollToBottom();
-
-
-        if (
-            session.title ===
-            "New Chat"
-        ) {
-
-            session.title =
-                text.length > 40
-                    ? text.slice(0, 40) + "…"
-                    : text;
-
-        }
-
-
-        renderHistory();
-
-
-        messageInput.value = "";
-
-        autosizeInput();
-
-
-        appendTypingIndicator();
-
-
-        try {
-
-            const result =
-                await getAIResponse(
-                    text
-                );
-
-
-            removeTypingIndicator();
-
-
-            const aiNow =
-                new Date();
-
-
-            const aiMsg = {
-
-                role: "ai",
-
-                text:
-                    result.answer,
-
-                citations:
-                    result.citations || [],
-
-                timestamp:
-                    aiNow.toISOString(),
-
-                time:
-                    getTime(aiNow)
-
-            };
-
-
-            session.messages.push(
-                aiMsg
-            );
-
-
-            appendMessageEl(
-                aiMsg
-            );
-
-
-            renderHistory();
-
-            scrollToBottom();
-
-
-        } catch (error) {
-
-            removeTypingIndicator();
-
-
-            const errorMsg = {
-
-                role: "ai",
-
-                text:
-                    "⚠ Unable to connect to the AI backend. Please check whether your Python backend and Ollama are running.",
-
-                citations: [],
-
-                timestamp:
-                    new Date().toISOString()
-
-            };
-
-
-            session.messages.push(
-                errorMsg
-            );
-
-
-            appendMessageEl(
-                errorMsg
-            );
-
-
-            console.error(error);
-
-        }
-
-    }
-
-
-    /* =====================================================
-       BACKEND
-    ===================================================== */
-
-    async function getAIResponse(question) {
-
-        /*
-        =====================================================
-        IMPORTANT
-
-        Replace this URL with your Python backend.
-
-        Example:
-
-        http://127.0.0.1:8000/api/chat
-
-        =====================================================
-        */
 
 
         const response =
             await fetch(
-                "http://127.0.0.1:8000/api/chat",
+                API_URL,
                 {
-
                     method: "POST",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
-
                     },
 
-                    body: JSON.stringify({
+                    body:
+                        JSON.stringify({
+                            question:
+                                question,
 
-                        question: question,
-
-                        lang:
-                            "en-IN",
-
-                        session_id:
-                            activeSessionId
-
-                    })
-
+                            language:
+                                "en-IN"
+                        })
                 }
             );
+
+
+        console.log(
+            "Backend HTTP status:",
+            response.status
+        );
 
 
         if (!response.ok) {
 
             throw new Error(
-                "Backend request failed"
+                "Backend HTTP " +
+                response.status
             );
-
         }
 
 
@@ -754,304 +349,165 @@
             await response.json();
 
 
-        return {
+        console.log(
+            "Backend data:",
+            data
+        );
 
-            answer:
-                data.answer,
 
-            citations:
-                data.citations || []
-
-        };
-
+        return data;
     }
 
 
     /* =====================================================
-       FORM
+       MAIN SEND FUNCTION
     ===================================================== */
 
-    composerForm.addEventListener(
-        "submit",
-        event => {
+    async function handleSend(question) {
 
-            event.preventDefault();
-
-            handleSend(
-                messageInput.value
-            );
-
-        }
-    );
+        question =
+            String(
+                question || ""
+            ).trim();
 
 
-    messageInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                handleSend(
-                    messageInput.value
-                );
-
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       AUTOSIZE
-    ===================================================== */
-
-    function autosizeInput() {
-
-        messageInput.style.height =
-            "auto";
-
-
-        messageInput.style.height =
-            Math.min(
-                messageInput.scrollHeight,
-                140
-            ) + "px";
-
-    }
-
-
-    messageInput.addEventListener(
-        "input",
-        autosizeInput
-    );
-
-
-    /* =====================================================
-       SUGGESTIONS
-    ===================================================== */
-
-    document
-        .querySelectorAll(".suggestion")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    handleSend(
-                        button.dataset.q
-                    );
-
-                }
-            );
-
-        });
-
-
-    /* =====================================================
-       NEW CHAT
-    ===================================================== */
-
-    newChatBtn.addEventListener(
-        "click",
-        createSession
-    );
-
-
-    /* =====================================================
-       PDF
-    ===================================================== */
-
-    attachBtn.addEventListener(
-        "click",
-        () => fileInput.click()
-    );
-
-
-    fileInput.addEventListener(
-        "change",
-        event => {
-
-            handleFiles(
-                event.target.files
-            );
-
-            fileInput.value = "";
-
-        }
-    );
-
-
-    ["dragenter", "dragover"]
-        .forEach(eventName => {
-
-            uploadZone.addEventListener(
-                eventName,
-                event => {
-
-                    event.preventDefault();
-
-                    uploadZone.style.borderColor =
-                        "var(--cyan)";
-
-                }
-            );
-
-        });
-
-
-    ["dragleave", "drop"]
-        .forEach(eventName => {
-
-            uploadZone.addEventListener(
-                eventName,
-                event => {
-
-                    event.preventDefault();
-
-                    uploadZone.style.borderColor =
-                        "";
-
-                }
-            );
-
-        });
-
-
-    uploadZone.addEventListener(
-        "drop",
-        event => {
-
-            handleFiles(
-                event.dataTransfer.files
-            );
-
-        }
-    );
-
-
-    function handleFiles(fileList) {
-
-        const files =
-            Array.from(fileList)
-                .filter(
-                    file =>
-                        file.type ===
-                        "application/pdf"
-                );
-
-
-        if (!files.length) {
-
-            showToast(
-                "Only PDF files are supported."
-            );
-
+        if (!question) {
             return;
-
         }
 
 
-        files.forEach(file => {
-
-            const doc = {
-
-                name: file.name,
-
-                status: "indexing"
-
-            };
+        if (isSending) {
+            return;
+        }
 
 
-            uploadedDocs.push(doc);
+        isSending = true;
 
-            renderDocs();
 
+        /* Disable buttons */
+
+        if (sendBtn) {
+            sendBtn.disabled = true;
+        }
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+        }
+
+
+        /* Hide welcome screen */
+
+        if (emptyState) {
+            emptyState.style.display =
+                "none";
+        }
+
+
+        /* Show bottom composer */
+
+        if (bottomComposer) {
+            bottomComposer.classList.add(
+                "visible"
+            );
+        }
+
+
+        /* Show user message */
+
+        addMessage(
+            question,
+            "user"
+        );
+
+
+        /* Clear inputs */
+
+        if (messageInput) {
+            messageInput.value = "";
+        }
+
+        if (bottomMessageInput) {
+            bottomMessageInput.value = "";
+        }
+
+
+        /* Show typing */
+
+        showTyping();
+
+
+        try {
+
+            const data =
+                await sendToBackend(
+                    question
+                );
+
+
+            removeTyping();
+
+
+            const answer =
+                data.answer ||
+                "No answer was returned by the AI.";
+
+
+            /* Show AI answer */
+
+            addMessage(
+                answer,
+                "ai"
+            );
 
             /*
-            ============================================
-            REAL BACKEND PDF UPLOAD GOES HERE
-            ============================================
+               IMPORTANT:
+               We DO NOT call speakAnswer()
+               here.
 
-            Later we can replace this simulation
-            with FormData + Python API.
+               The user must click the
+               🔊 Speak button.
             */
 
 
-            setTimeout(
-                () => {
+        } catch (error) {
 
-                    doc.status =
-                        "ready";
-
-                    renderDocs();
-
-
-                    showToast(
-                        `"${file.name}" is ready.`
-                    );
-
-                },
-                1200
+            console.error(
+                "PLANT-GPT ERROR:",
+                error
             );
 
-        });
 
-    }
-
-
-    function renderDocs() {
-
-        docList.innerHTML = "";
+            removeTyping();
 
 
-        uploadedDocs.forEach(
-            doc => {
+            addMessage(
+                "⚠ AI backend connection failed. Please make sure the PLANT-GPT server is running on port 8000.",
+                "ai"
+            );
 
-                const li =
-                    document.createElement(
-                        "li"
-                    );
+        } finally {
 
-
-                li.className =
-                    "doc-item";
+            isSending = false;
 
 
-                li.innerHTML = `
-
-                    <span>📄</span>
-
-                    <span class="doc-name">
-                        ${escapeHtml(doc.name)}
-                    </span>
-
-                    <span class="doc-status ${doc.status}">
-                        ${
-                            doc.status === "indexing"
-                            ? "INDEXING"
-                            : "READY"
-                        }
-                    </span>
-
-                `;
-
-
-                docList.appendChild(li);
-
+            if (sendBtn) {
+                sendBtn.disabled = false;
             }
-        );
 
+            if (bottomSendBtn) {
+                bottomSendBtn.disabled = false;
+            }
+
+
+            if (messageInput) {
+                messageInput.focus();
+            }
+        }
     }
 
 
     /* =====================================================
-       VOICE
+       SPEECH TO TEXT
     ===================================================== */
 
     const SpeechRecognition =
@@ -1059,226 +515,429 @@
         window.webkitSpeechRecognition;
 
 
+    let recognition = null;
+
+
     if (SpeechRecognition) {
 
         recognition =
             new SpeechRecognition();
 
+        recognition.continuous = false;
 
-        recognition.continuous =
-            false;
+        recognition.interimResults = true;
 
-        recognition.interimResults =
-            true;
-
-
-        recognition.addEventListener(
-            "result",
-            event => {
-
-                let transcript = "";
+        recognition.lang = "en-IN";
 
 
-                for (
-                    const result of
-                    event.results
-                ) {
-
-                    transcript +=
-                        result[0]
-                            .transcript;
-
-                }
-
-
-                messageInput.value =
-                    transcript;
-
-
-                autosizeInput();
-
-            }
-        );
-
-
-        recognition.addEventListener(
-            "end",
-            () => {
-
-                isListening = false;
-
-                micBtn.classList.remove(
-                    "listening"
-                );
-
-            }
-        );
-
-
-        recognition.addEventListener(
-            "error",
-            () => {
-
-                isListening = false;
-
-                showToast(
-                    "Microphone access failed."
-                );
-
-            }
-        );
-
-    } else {
-
-        micBtn.disabled = true;
-
-    }
-
-
-    micBtn.addEventListener(
-        "click",
-        () => {
-
-            if (!recognition)
-                return;
-
-
-            if (isListening) {
-
-                recognition.stop();
-
-                isListening = false;
-
-                return;
-
-            }
-
-
-            recognition.lang =
-                "en-IN";
-
-
-            recognition.start();
+        recognition.onstart = function () {
 
             isListening = true;
 
-
-            showToast(
-                "Listening..."
+            console.log(
+                "Speech recognition started"
             );
 
-        }
-    );
+
+            if (micBtn) {
+
+                micBtn.classList.add(
+                    "listening"
+                );
+
+                micBtn.title =
+                    "Listening...";
+            }
 
 
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
+            if (bottomMicBtn) {
 
-    sidebarToggle.addEventListener(
-        "click",
-        () => {
+                bottomMicBtn.classList.add(
+                    "listening"
+                );
 
-            sidebar.classList.add(
-                "open"
-            );
+                bottomMicBtn.textContent =
+                    "🔴";
 
-        }
-    );
-
-
-    sidebarClose.addEventListener(
-        "click",
-        closeSidebar
-    );
+                bottomMicBtn.title =
+                    "Listening...";
+            }
+        };
 
 
-    function closeSidebar() {
+        recognition.onresult =
+            function (event) {
 
-        sidebar.classList.remove(
-            "open"
-        );
+                let finalText = "";
 
-    }
-
-
-    /* =====================================================
-       TOAST
-    ===================================================== */
-
-    let toastTimer;
+                let interimText = "";
 
 
-    function showToast(message) {
+                for (
+                    let i = event.resultIndex;
+                    i < event.results.length;
+                    i++
+                ) {
 
-        clearTimeout(
-            toastTimer
-        );
-
-
-        toast.textContent =
-            message;
-
-
-        toast.classList.add(
-            "show"
-        );
+                    const transcript =
+                        event.results[i][0].transcript;
 
 
-        toastTimer =
-            setTimeout(
-                () => {
+                    if (
+                        event.results[i].isFinal
+                    ) {
 
-                    toast.classList.remove(
-                        "show"
+                        finalText +=
+                            transcript;
+
+                    } else {
+
+                        interimText +=
+                            transcript;
+                    }
+                }
+
+
+                /*
+                   Put speech text into
+                   the active message box.
+                */
+
+                if (finalText) {
+
+                    const text =
+                        finalText.trim();
+
+
+                    if (messageInput) {
+
+                        messageInput.value =
+                            text;
+                    }
+
+                    if (bottomMessageInput) {
+
+                        bottomMessageInput.value =
+                            text;
+                    }
+
+                } else if (interimText) {
+
+                    if (messageInput) {
+
+                        messageInput.value =
+                            interimText;
+                    }
+
+                    if (bottomMessageInput) {
+
+                        bottomMessageInput.value =
+                            interimText;
+                    }
+                }
+            };
+
+
+        recognition.onerror =
+            function (event) {
+
+                console.error(
+                    "Speech recognition error:",
+                    event.error
+                );
+
+
+                if (event.error === "not-allowed") {
+
+                    alert(
+                        "Microphone permission was denied. Please allow microphone access in your browser."
                     );
 
-                },
-                2600
-            );
+                } else if (
+                    event.error === "no-speech"
+                ) {
 
+                    console.log(
+                        "No speech detected."
+                    );
+                }
+            };
+
+
+        recognition.onend =
+            function () {
+
+                isListening = false;
+
+
+                if (micBtn) {
+
+                    micBtn.classList.remove(
+                        "listening"
+                    );
+
+                    micBtn.title =
+                        "Voice input";
+                }
+
+
+                if (bottomMicBtn) {
+
+                    bottomMicBtn.classList.remove(
+                        "listening"
+                    );
+
+                    bottomMicBtn.textContent =
+                        "🎙";
+
+                    bottomMicBtn.title =
+                        "Voice input";
+                }
+
+
+                console.log(
+                    "Speech recognition ended"
+                );
+            };
+
+
+    } else {
+
+        console.warn(
+            "Speech Recognition is not supported by this browser."
+        );
     }
 
 
     /* =====================================================
-       UTIL
+       START / STOP SPEECH RECOGNITION
     ===================================================== */
 
-    function escapeHtml(value) {
+    function toggleSpeechRecognition() {
 
-        const div =
-            document.createElement(
-                "div"
+        if (!recognition) {
+
+            alert(
+                "Speech-to-Text is not supported by this browser. Please use Google Chrome or Microsoft Edge."
             );
 
+            return;
+        }
 
-        div.textContent =
-            value;
 
+        if (isListening) {
 
-        return div.innerHTML;
+            recognition.stop();
 
+        } else {
+
+            try {
+
+                recognition.start();
+
+            } catch (error) {
+
+                console.error(
+                    "Could not start microphone:",
+                    error
+                );
+            }
+        }
     }
 
 
-    function scrollToBottom() {
+    /* =====================================================
+       MAIN FORM
+    ===================================================== */
 
-        requestAnimationFrame(
-            () => {
+    if (composerForm) {
 
-                chatScroll.scrollTop =
-                    chatScroll.scrollHeight;
+        composerForm.addEventListener(
+            "submit",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                if (!messageInput) {
+                    return;
+                }
+
+
+                handleSend(
+                    messageInput.value
+                );
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       ENTER KEY
+    ===================================================== */
+
+    if (messageInput) {
+
+        messageInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    handleSend(
+                        messageInput.value
+                    );
+                }
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       BOTTOM FORM
+    ===================================================== */
+
+    if (bottomComposerForm) {
+
+        bottomComposerForm.addEventListener(
+            "submit",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                if (!bottomMessageInput) {
+                    return;
+                }
+
+
+                handleSend(
+                    bottomMessageInput.value
+                );
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       BOTTOM ENTER KEY
+    ===================================================== */
+
+    if (bottomMessageInput) {
+
+        bottomMessageInput.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    handleSend(
+                        bottomMessageInput.value
+                    );
+                }
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       MICROPHONE BUTTONS
+    ===================================================== */
+
+    if (micBtn) {
+
+        micBtn.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                toggleSpeechRecognition();
+
+            }
+        );
+    }
+
+
+    if (bottomMicBtn) {
+
+        bottomMicBtn.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                toggleSpeechRecognition();
+
+            }
+        );
+    }
+
+
+    /* =====================================================
+       SUGGESTION BUTTONS
+    ===================================================== */
+
+    document
+        .querySelectorAll(".suggestion")
+        .forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+
+                        event.stopPropagation();
+
+
+                        const question =
+                            button.dataset.q ||
+                            button.textContent;
+
+
+                        handleSend(
+                            question
+                        );
+
+                    }
+                );
 
             }
         );
 
-    }
-
 
     /* =====================================================
-       INIT
+       DONE
     ===================================================== */
-
-    createSession();
 
 })();
